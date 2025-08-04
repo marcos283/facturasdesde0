@@ -186,6 +186,22 @@
             margin-bottom: 25px;
         }
 
+        .config-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .config-button {
+            background-color: #f39c12;
+            font-size: 14px;
+            min-width: auto;
+            padding: 8px 16px;
+        }
+
+        .config-button:hover {
+            background-color: #e67e22;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -230,6 +246,10 @@
 <body>
     <div class="container">
         <h1>Capturador de Facturas</h1>
+        
+        <div class="config-section">
+            <button id="config-btn" class="config-button">⚙️ Configurar API</button>
+        </div>
         
         <div class="camera-section">
             <video id="camera" autoplay></video>
@@ -305,6 +325,7 @@
             }
 
             initializeEventListeners() {
+                document.getElementById('config-btn').addEventListener('click', () => this.showConfig());
                 document.getElementById('start-camera').addEventListener('click', () => this.startCamera());
                 document.getElementById('capture-photo').addEventListener('click', () => this.capturePhoto());
                 document.getElementById('retake-photo').addEventListener('click', () => this.retakePhoto());
@@ -312,6 +333,20 @@
                 document.getElementById('save-to-sheets').addEventListener('click', () => this.saveToSheets());
                 document.getElementById('cancel').addEventListener('click', () => this.cancel());
                 document.getElementById('new-invoice').addEventListener('click', () => this.newInvoice());
+            }
+
+            showConfig() {
+                const currentSheetId = localStorage.getItem('sheetId') || '';
+                const currentApiKey = localStorage.getItem('apiKey') || '';
+                
+                const sheetId = prompt('Google Sheet ID:', currentSheetId);
+                const apiKey = prompt('Google API Key:', currentApiKey);
+                
+                if (sheetId && apiKey) {
+                    localStorage.setItem('sheetId', sheetId);
+                    localStorage.setItem('apiKey', apiKey);
+                    alert('✅ Configuración guardada correctamente');
+                }
             }
 
             async startCamera() {
@@ -507,8 +542,13 @@
             }
 
             async sendToGoogleSheets(data) {
-                const SHEET_ID = '18ZL4RWiljZs-TJJQasdoSaS_KXp0HMjAzvjJMMEQTu4';
-                const API_KEY = 'AIzaSyBbNhSGpzyw00AZdck5PVTm0twhnCSLOeM';
+                const SHEET_ID = localStorage.getItem('sheetId');
+                const API_KEY = localStorage.getItem('apiKey');
+                
+                if (!SHEET_ID || !API_KEY) {
+                    alert('⚠️ Configuración requerida:\n\nHaz clic en "⚙️ Configurar API" para ingresar:\n1. Google Sheet ID\n2. Google API Key\n\nConsulta el README para instrucciones.');
+                    return;
+                }
                 
                 const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A1:append?valueInputOption=RAW&key=${API_KEY}`;
                 
