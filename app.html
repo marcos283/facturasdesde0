@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#3498db">
+    <title>Capturador de Facturas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .camera-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #camera {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border: 3px solid #3498db;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .camera-controls, .preview-controls, .form-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            min-width: 150px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        button#save-to-sheets {
+            background-color: #27ae60;
+        }
+
+        button#save-to-sheets:hover {
+            background-color: #229954;
+        }
+
+        button#cancel, button#retake-photo {
+            background-color: #e74c3c;
+        }
+
+        button#cancel:hover, button#retake-photo:hover {
+            background-color: #c0392b;
+        }
+
+        .preview-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #captured-image {
+            max-width: 100%;
+            max-height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .processing-section {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .loading {
+            font-size: 18px;
+            color: #3498db;
+            margin-top: 20px;
+        }
+
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-controls {
+            margin-top: 30px;
+        }
+
+        .success-section {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            color: #155724;
+        }
+
+        .success-section h3 {
+            color: #155724;
+            margin-bottom: 15px;
+        }
+
+        .success-section p {
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .camera-controls, .preview-controls, .form-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 20px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Capturador de Facturas</h1>
+        
+        <div class="camera-section">
+            <video id="camera" autoplay></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div class="camera-controls">
+                <button id="start-camera">Iniciar Cámara</button>
+                <button id="capture-photo" disabled>Capturar Foto</button>
+            </div>
+        </div>
+
+        <div class="preview-section" style="display: none;">
+            <h3>Foto Capturada</h3>
+            <img id="captured-image" alt="Factura capturada">
+            <div class="preview-controls">
+                <button id="retake-photo">Tomar Otra Foto</button>
+                <button id="process-image">Procesar Factura</button>
+            </div>
+        </div>
+
+        <div class="processing-section" style="display: none;">
+            <h3>Procesando...</h3>
+            <div class="loading">Extrayendo datos de la factura...</div>
+        </div>
+
+        <div class="form-section" style="display: none;">
+            <h3>Datos Extraídos</h3>
+            <form id="invoice-form">
+                <div class="form-group">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha">
+                </div>
+                <div class="form-group">
+                    <label for="empresa">Empresa/Proveedor:</label>
+                    <input type="text" id="empresa" name="empresa">
+                </div>
+                <div class="form-group">
+                    <label for="numero-factura">Número de Factura:</label>
+                    <input type="text" id="numero-factura" name="numero-factura">
+                </div>
+                <div class="form-group">
+                    <label for="total">Total:</label>
+                    <input type="number" id="total" name="total" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="concepto">Concepto:</label>
+                    <textarea id="concepto" name="concepto" rows="3"></textarea>
+                </div>
+                <div class="form-controls">
+                    <button type="button" id="save-to-sheets">Guardar en Google Sheets</button>
+                    <button type="button" id="cancel">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="success-section" style="display: none;">
+            <h3>¡Factura Guardada!</h3>
+            <p>Los datos se han guardado correctamente en Google Sheets.</p>
+            <button id="new-invoice">Capturar Nueva Factura</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script>
+        class InvoiceCapture {
+            constructor() {
+                this.video = document.getElementById('camera');
+                this.canvas = document.getElementById('canvas');
+                this.capturedImage = document.getElementById('captured-image');
+                this.stream = null;
+                this.currentImageData = null;
+                
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('start-camera').addEventListener('click', () => this.startCamera());
+                document.getElementById('capture-photo').addEventListener('click', () => this.capturePhoto());
+                document.getElementById('retake-photo').addEventListener('click', () => this.retakePhoto());
+                document.getElementById('process-image').addEventListener('click', () => this.processImage());
+                document.getElementById('save-to-sheets').addEventListener('click', () => this.saveToSheets());
+                document.getElementById('cancel').addEventListener('click', () => this.cancel());
+                document.getElementById('new-invoice').addEventListener('click', () => this.newInvoice());
+            }
+
+            async startCamera() {
+                try {
+                    // Verificar si estamos en HTTPS o localhost
+                    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                        alert('⚠️ La cámara requiere HTTPS para funcionar en móviles.\n\nOpciones:\n1. Sube la app a un hosting gratuito\n2. Usa un servidor local con HTTPS');
+                        return;
+                    }
+
+                    // Solicitar permisos explícitamente
+                    const permissions = await navigator.permissions.query({name: 'camera'});
+                    if (permissions.state === 'denied') {
+                        alert('❌ Permisos de cámara denegados.\n\nPor favor:\n1. Ve a configuración del navegador\n2. Permite el acceso a la cámara\n3. Recarga la página');
+                        return;
+                    }
+
+                    this.stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: 'environment', // Cámara trasera en móviles
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        } 
+                    });
+                    
+                    this.video.srcObject = this.stream;
+                    document.getElementById('start-camera').disabled = true;
+                    document.getElementById('capture-photo').disabled = false;
+                    
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    let errorMsg = '❌ Error al acceder a la cámara.\n\n';
+                    
+                    if (error.name === 'NotAllowedError') {
+                        errorMsg += '🔒 Permisos denegados:\n1. Permite el acceso a la cámara\n2. Recarga la página';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMsg += '📷 No se encontró cámara en el dispositivo';
+                    } else if (error.name === 'NotSupportedError') {
+                        errorMsg += '⚠️ Navegador no compatible o requiere HTTPS';
+                    } else {
+                        errorMsg += `Error: ${error.message}`;
+                    }
+                    
+                    alert(errorMsg);
+                }
+            }
+
+            capturePhoto() {
+                const context = this.canvas.getContext('2d');
+                this.canvas.width = this.video.videoWidth;
+                this.canvas.height = this.video.videoHeight;
+                
+                context.drawImage(this.video, 0, 0);
+                
+                this.currentImageData = this.canvas.toDataURL('image/jpeg', 0.8);
+                this.capturedImage.src = this.currentImageData;
+                
+                this.showSection('preview-section');
+                this.hideSection('camera-section');
+            }
+
+            retakePhoto() {
+                this.showSection('camera-section');
+                this.hideSection('preview-section');
+                this.currentImageData = null;
+            }
+
+            async processImage() {
+                if (!this.currentImageData) return;
+                
+                this.showSection('processing-section');
+                this.hideSection('preview-section');
+                
+                try {
+                    const result = await Tesseract.recognize(this.currentImageData, 'spa', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                document.querySelector('.loading').textContent = 
+                                    `Procesando... ${Math.round(m.progress * 100)}%`;
+                            }
+                        }
+                    });
+                    
+                    const extractedText = result.data.text;
+                    const parsedData = this.parseInvoiceData(extractedText);
+                    this.populateForm(parsedData);
+                    
+                    this.showSection('form-section');
+                    this.hideSection('processing-section');
+                    
+                } catch (error) {
+                    console.error('Error processing image:', error);
+                    alert('Error al procesar la imagen. Por favor, intenta de nuevo.');
+                    this.showSection('preview-section');
+                    this.hideSection('processing-section');
+                }
+            }
+
+            parseInvoiceData(text) {
+                const data = {
+                    fecha: '',
+                    empresa: '',
+                    numeroFactura: '',
+                    total: '',
+                    concepto: text.substring(0, 200)
+                };
+
+                const lines = text.split('\n');
+                
+                for (let line of lines) {
+                    line = line.trim();
+                    
+                    const dateRegex = /(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/;
+                    const dateMatch = line.match(dateRegex);
+                    if (dateMatch && !data.fecha) {
+                        const dateStr = dateMatch[1];
+                        const date = this.parseDate(dateStr);
+                        if (date) data.fecha = date;
+                    }
+                    
+                    const totalRegex = /(?:total|importe|precio)[\s:]*€?\s*(\d+[,\.]\d{2})/i;
+                    const totalMatch = line.match(totalRegex);
+                    if (totalMatch && !data.total) {
+                        data.total = totalMatch[1].replace(',', '.');
+                    }
+                    
+                    const invoiceRegex = /(?:factura|fact|nº|n°|numero)[\s:]*([A-Z0-9\-]+)/i;
+                    const invoiceMatch = line.match(invoiceRegex);
+                    if (invoiceMatch && !data.numeroFactura) {
+                        data.numeroFactura = invoiceMatch[1];
+                    }
+                    
+                    if (line.length > 5 && line.length < 50 && 
+                        !line.match(/\d{10,}/) && !data.empresa &&
+                        !line.match(/fecha|total|factura/i)) {
+                        data.empresa = line;
+                    }
+                }
+                
+                return data;
+            }
+
+            parseDate(dateStr) {
+                const formats = [
+                    /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/,
+                    /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})/
+                ];
+                
+                for (let format of formats) {
+                    const match = dateStr.match(format);
+                    if (match) {
+                        let [, day, month, year] = match;
+                        if (year.length === 2) {
+                            year = '20' + year;
+                        }
+                        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    }
+                }
+                return '';
+            }
+
+            populateForm(data) {
+                document.getElementById('fecha').value = data.fecha;
+                document.getElementById('empresa').value = data.empresa;
+                document.getElementById('numero-factura').value = data.numeroFactura;
+                document.getElementById('total').value = data.total;
+                document.getElementById('concepto').value = data.concepto;
+            }
+
+            async saveToSheets() {
+                const formData = {
+                    fecha: document.getElementById('fecha').value,
+                    empresa: document.getElementById('empresa').value,
+                    numeroFactura: document.getElementById('numero-factura').value,
+                    total: document.getElementById('total').value,
+                    concepto: document.getElementById('concepto').value,
+                    timestamp: new Date().toISOString()
+                };
+
+                if (!formData.fecha || !formData.empresa || !formData.total) {
+                    alert('Por favor, completa al menos la fecha, empresa y total.');
+                    return;
+                }
+
+                try {
+                    await this.sendToGoogleSheets(formData);
+                    this.showSection('success-section');
+                    this.hideSection('form-section');
+                } catch (error) {
+                    console.error('Error saving to sheets:', error);
+                    alert('Error al guardar en Google Sheets. Verifica tu configuración.');
+                }
+            }
+
+            async sendToGoogleSheets(data) {
+                const SHEET_ID = '18ZL4RWiljZs-TJJQasdoSaS_KXp0HMjAzvjJMMEQTu4';
+                const API_KEY = 'AIzaSyBbNhSGpzyw00AZdck5PVTm0twhnCSLOeM';
+                
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A1:append?valueInputOption=RAW&key=${API_KEY}`;
+                
+                const values = [[
+                    data.timestamp,
+                    data.fecha,
+                    data.empresa,
+                    data.numeroFactura,
+                    data.total,
+                    data.concepto
+                ]];
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        values: values
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta de Google Sheets');
+                }
+            }
+
+            cancel() {
+                this.newInvoice();
+            }
+
+            newInvoice() {
+                this.hideAllSections();
+                this.showSection('camera-section');
+                document.getElementById('start-camera').disabled = false;
+                document.getElementById('capture-photo').disabled = true;
+                
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                    this.video.srcObject = null;
+                }
+                
+                this.currentImageData = null;
+                document.getElementById('invoice-form').reset();
+            }
+
+            showSection(sectionClass) {
+                document.querySelector(`.${sectionClass}`).style.display = 'block';
+            }
+
+            hideSection(sectionClass) {
+                document.querySelector(`.${sectionClass}`).style.display = 'none';
+            }
+
+            hideAllSections() {
+                const sections = ['camera-section', 'preview-section', 'processing-section', 'form-section', 'success-section'];
+                sections.forEach(section => this.hideSection(section));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new InvoiceCapture();
+        });
+    </script>
+</body>
+</html>

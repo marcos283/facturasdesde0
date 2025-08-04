@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capturador de Facturas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Capturador de Facturas</h1>
+        
+        <div class="camera-section">
+            <video id="camera" autoplay></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div class="camera-controls">
+                <button id="start-camera">Iniciar Cámara</button>
+                <button id="capture-photo" disabled>Capturar Foto</button>
+            </div>
+        </div>
+
+        <div class="preview-section" style="display: none;">
+            <h3>Foto Capturada</h3>
+            <img id="captured-image" alt="Factura capturada">
+            <div class="preview-controls">
+                <button id="retake-photo">Tomar Otra Foto</button>
+                <button id="process-image">Procesar Factura</button>
+            </div>
+        </div>
+
+        <div class="processing-section" style="display: none;">
+            <h3>Procesando...</h3>
+            <div class="loading">Extrayendo datos de la factura...</div>
+        </div>
+
+        <div class="form-section" style="display: none;">
+            <h3>Datos Extraídos</h3>
+            <form id="invoice-form">
+                <div class="form-group">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha">
+                </div>
+                <div class="form-group">
+                    <label for="empresa">Empresa/Proveedor:</label>
+                    <input type="text" id="empresa" name="empresa">
+                </div>
+                <div class="form-group">
+                    <label for="numero-factura">Número de Factura:</label>
+                    <input type="text" id="numero-factura" name="numero-factura">
+                </div>
+                <div class="form-group">
+                    <label for="total">Total:</label>
+                    <input type="number" id="total" name="total" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="concepto">Concepto:</label>
+                    <textarea id="concepto" name="concepto" rows="3"></textarea>
+                </div>
+                <div class="form-controls">
+                    <button type="button" id="save-to-sheets">Guardar en Google Sheets</button>
+                    <button type="button" id="cancel">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="success-section" style="display: none;">
+            <h3>¡Factura Guardada!</h3>
+            <p>Los datos se han guardado correctamente en Google Sheets.</p>
+            <button id="new-invoice">Capturar Nueva Factura</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
